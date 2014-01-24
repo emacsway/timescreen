@@ -1,9 +1,10 @@
 #!/bin/bash
 START_DATE=`date "+%d.%m.%Y %H:%M:%S"`
 PROJECT=${1:-'default'}
-MAX_WIDTH=640
-QUALITY=65
-DATA_ROOT=${DATA_ROOT:-/media2/timescreens}
+MAX_WIDTH=${TIMESCREEN_MAX_WIDTH:-640}
+QUALITY=${TIMESCREEN_QUALITY:-65}
+DATA_ROOT=${TIMESCREEN_DATA_ROOT:-~/timescreens}
+INTERVAL=${TIMESCREEN_INTERVAL:-300}
 BIN_SOURCE=$(python -c 'import sys,os; print os.path.realpath(sys.argv[1])' $BASH_SOURCE)
 BIN_ROOT=`dirname $BIN_SOURCE`
 APP_ROOT=`dirname $BIN_ROOT`
@@ -24,7 +25,6 @@ function screen() {
     filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
     convert "$filename" -resize $MAX_WIDTH -quality $QUALITY "$filename"
-    # DISPLAY=:0 scrot '%Y-%m-%d %H:%M:%S.jpg'
 }
 
 
@@ -39,7 +39,7 @@ while true
 do
     screen
     echo `date "+%d.%m.%Y %H:%M:%S"`
-    sleep 290
+    sleep $(($INTERVAL - 10))
     nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
     sleep 10
 done
