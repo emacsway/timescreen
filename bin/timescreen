@@ -1,0 +1,45 @@
+#!/bin/bash
+START_DATE=`date "+%d.%m.%Y %H:%M:%S"`
+PROJECT=${1:-'default'}
+MAX_WIDTH=640
+QUALITY=65
+DATA_ROOT=${DATA_ROOT:-/media2/timescreens}
+BIN_SOURCE=$(python -c 'import sys,os; print os.path.realpath(sys.argv[1])' $BASH_SOURCE)
+BIN_ROOT=`dirname $BIN_SOURCE`
+APP_ROOT=`dirname $BIN_ROOT`
+SOUNDS_ROOT=$APP_ROOT/var/sounds
+SOUND_BEFORE=$SOUNDS_ROOT/sonar.ogg
+SOUND_ON=$SOUNDS_ROOT/KDE-Im-Sms.ogg
+
+echo "Start at: $START_DATE"
+
+trap ctrl_c INT
+
+
+function screen() {
+    nohup mplayer "$SOUND_ON" >/dev/null 2>&1 &
+    dir="$(date +$DATA_ROOT/$PROJECT/%Y/%m/%d)"
+    mkdir -p $dir
+    cd $dir
+    filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
+    DISPLAY=:0 scrot "$filename"
+    convert "$filename" -resize $MAX_WIDTH -quality $QUALITY "$filename"
+    # DISPLAY=:0 scrot '%Y-%m-%d %H:%M:%S.jpg'
+}
+
+
+function ctrl_c() {
+    screen
+    echo "Start at: $START_DATE Exit at: "`date "+%d.%m.%Y %H:%M:%S"`
+    exit 1;
+}
+
+sleep 20
+while true
+do
+    screen
+    echo `date "+%d.%m.%Y %H:%M:%S"`
+    sleep 290
+    nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
+    sleep 10
+done
