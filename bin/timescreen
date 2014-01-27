@@ -9,8 +9,8 @@ BIN_SOURCE=$(python -c 'import sys,os; print os.path.realpath(sys.argv[1])' $BAS
 BIN_ROOT=`dirname $BIN_SOURCE`
 APP_ROOT=`dirname $BIN_ROOT`
 SOUNDS_ROOT=$APP_ROOT/var/sounds
-SOUND_BEFORE=$SOUNDS_ROOT/sonar.ogg
-SOUND_ON=$SOUNDS_ROOT/KDE-Im-Sms.ogg
+SOUND_BEFORE=$SOUNDS_ROOT/KDE-Im-Sms.ogg
+SOUND_ON=$SOUNDS_ROOT/sonar.ogg
 
 echo "Start at: $START_DATE"
 
@@ -29,16 +29,16 @@ function screen() {
 
 
 function ctrl_c() {
-    screen
     echo "Start at: $START_DATE Exit at: "`date "+%d.%m.%Y %H:%M:%S"`
+    screen
     exit 1;
 }
 
 sleep 20
 while true
 do
-    screen
     echo `date "+%d.%m.%Y %H:%M:%S"`
+    screen
     sleep $(($INTERVAL - 10))
     nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
     sleep 10
