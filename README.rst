@@ -32,4 +32,4 @@ Run in console on start::
 
 And press C-c on end of work.
 
-Homepage https://bitbucket.org/evotech/timescreen
+Homepage https://bitbucket.org/emacsway/timescreen
