@@ -30,6 +30,6 @@ Run in console on start::
 
     timescreen project_name
 
-And press C-c on end of work.
+And press C-c on end of work on ticket. Type asked data for log file.
 
 Homepage https://bitbucket.org/emacsway/timescreen
