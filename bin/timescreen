@@ -34,11 +34,17 @@ function screen() {
 function ctrl_c() {
     echo "Ticket number:"
     read TICKET_NUMBER
-    echo "Ticket title:"
-    read TICKET_TITLE
+    TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" $LOG_FILE`
+    if [ -n "$TICKET_TITLE" ]
+    then
+        echo "Found ticket title: \"$TICKET_TITLE\""
+    else
+        echo "Ticket title:"
+        read TICKET_TITLE
+    fi
     echo "Comment:"
     read COMMENT
-    echo "Commit hash:"
+    echo "Commit revision:"
     read COMMIT
     mkdir -p $LOG_ROOT
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
@@ -46,6 +52,7 @@ function ctrl_c() {
     echo "Start at: $START_DATE Exit at: $END_DATE"
     screen
     tail -n 10 $LOG_FILE
+    echo "Log file: $LOG_FILE"
     exit 1;
 }
 
