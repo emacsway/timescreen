@@ -12,6 +12,8 @@ APP_ROOT=`dirname $BIN_ROOT`
 SOUNDS_ROOT=$APP_ROOT/var/sounds
 SOUND_BEFORE=$SOUNDS_ROOT/KDE-Im-Sms.ogg
 SOUND_ON=$SOUNDS_ROOT/sonar.ogg
+LOG_ROOT="$(date +$DATA_ROOT/$PROJECT/%Y/%m)"
+LOG_FILE=$LOG_ROOT/timelog.tsv
 
 echo "Start at: $START_DATE"
 
@@ -30,11 +32,24 @@ function screen() {
 
 
 function ctrl_c() {
-    echo "Start at: $START_DATE Exit at: "`date "+%d.%m.%Y %H:%M:%S"`
+    echo "Ticket number:"
+    read TICKET_NUMBER
+    echo "Ticket title:"
+    read TICKET_TITLE
+    echo "Comment:"
+    read COMMENT
+    echo "Commit hash:"
+    read COMMIT
+    mkdir -p $LOG_ROOT
+    END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
+    echo -e "$TICKET_NUMBER\t$PROJECT\t$TICKET_TITLE\t$START_DATE\t$END_DATE\t\t\t\t\t\t$COMMIT\t$COMMENT" >> $LOG_FILE
+    echo "Start at: $START_DATE Exit at: $END_DATE"
     screen
+    tail -n 10 $LOG_FILE
     exit 1;
 }
 
+screen
 sleep 20
 while true
 do
