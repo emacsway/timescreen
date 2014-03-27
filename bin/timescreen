@@ -13,7 +13,7 @@ SOUNDS_ROOT=$APP_ROOT/var/sounds
 SOUND_BEFORE=$SOUNDS_ROOT/KDE-Im-Sms.ogg
 SOUND_ON=$SOUNDS_ROOT/sonar.ogg
 LOG_ROOT="$(date +$DATA_ROOT/$PROJECT/%Y/%m)"
-LOG_FILE=$LOG_ROOT/timelog.tsv
+LOG_FILE=$LOG_ROOT/timelog.$PROJECT.`date "+%Y.%m.tsv"`
 
 echo "Start at: $START_DATE"
 
