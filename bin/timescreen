@@ -51,8 +51,8 @@ function ctrl_c() {
     echo -e "$TICKET_NUMBER\t$PROJECT\t$TICKET_TITLE\t$START_DATE\t$END_DATE\t\t\t\t\t\t$COMMIT\t$COMMENT" >> $LOG_FILE
     echo -e "Start / End date: $START_DATE\t$END_DATE"
     screen
-    tail -n 10 $LOG_FILE
-    echo "Log file: $LOG_FILE"
+    tail -n 3 $LOG_FILE
+    echo "gedit $LOG_FILE"
     exit 1;
 }
 
