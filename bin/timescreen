@@ -52,7 +52,7 @@ function ctrl_c() {
     echo -e "Start / End date: $START_DATE\t$END_DATE"
     screen
     tail -n 3 $LOG_FILE
-    echo "gedit $LOG_FILE"
+    gedit $LOG_FILE
     exit 1;
 }
 
