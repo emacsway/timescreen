@@ -34,7 +34,12 @@ function screen() {
 function ctrl_c() {
     echo "Ticket number:"
     read TICKET_NUMBER
-    TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" $LOG_FILE`
+    if [ "$TICKET_NUMBER" != "0" -a -n "$TICKET_NUMBER" ]
+    then
+        TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" $LOG_FILE`
+    else
+        TICKET_TITLE=""
+    fi
     if [ -n "$TICKET_TITLE" ]
     then
         echo "Found ticket title: \"$TICKET_TITLE\""
