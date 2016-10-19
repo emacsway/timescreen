@@ -69,7 +69,7 @@ do
     echo `date "+%d.%m.%Y %H:%M:%S"`
     screen
     sleep $(($INTERVAL - $ALERT_INTERVAL))
-    notify-send -t $((($SOUND_BEFORE > 2 ? $SOUND_BEFORE - 2 : 2) * 1000)) "Screen will be saved in $ALERT_INTERVAL sec."
+    notify-send -t $(((ALERT_INTERVAL > 2 ? ALERT_INTERVAL - 2 : 2) * 1000)) "Screen will be saved in $ALERT_INTERVAL sec."
     nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
     sleep $ALERT_INTERVAL
 done
