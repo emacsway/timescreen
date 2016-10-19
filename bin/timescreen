@@ -73,8 +73,8 @@ do
     nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
     for i in `seq $ALERT_INTERVAL -1 1`;
     do
-        pkill notify-osd
         notify-send -t 1000 "Screen will be saved in $i sec."
         sleep 1
+        pkill notify-osd
     done
 done
