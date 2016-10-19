@@ -70,8 +70,11 @@ do
     echo `date "+%d.%m.%Y %H:%M:%S"`
     screen
     sleep $(($INTERVAL - $ALERT_INTERVAL))
-    pkill notify-osd
-    notify-send -t $(((ALERT_INTERVAL > 2 ? ALERT_INTERVAL - 2 : 2) * 1000)) "Screen will be saved in $ALERT_INTERVAL sec."
     nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
-    sleep $ALERT_INTERVAL
+    for i in `seq $ALERT_INTERVAL -1 1`;
+    do
+        pkill notify-osd
+        notify-send -t 1000 "Screen will be saved in $i sec."
+        sleep 1
+    done
 done
