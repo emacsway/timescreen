@@ -21,13 +21,14 @@ trap ctrl_c INT
 
 
 function screen() {
-    nohup mplayer "$SOUND_ON" >/dev/null 2>&1 &
     dir="$(date +$DATA_ROOT/$PROJECT/%Y/%m/%d)"
     mkdir -p $dir
     cd $dir
     filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
     convert "$filename" -resize $MAX_WIDTH -quality $QUALITY "$filename"
+    notify-send "SAVED!"
+    nohup mplayer "$SOUND_ON" >/dev/null 2>&1 &
 }
 
 
@@ -68,6 +69,7 @@ do
     echo `date "+%d.%m.%Y %H:%M:%S"`
     screen
     sleep $(($INTERVAL - $ALERT_INTERVAL))
+    notify-send -t $((($SOUND_BEFORE > 2 ? $SOUND_BEFORE - 2 : 2) * 1000)) "Screen will be saved in $ALERT_INTERVAL sec."
     nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
     sleep $ALERT_INTERVAL
 done
