@@ -6,18 +6,36 @@ QUALITY=${TIMESCREEN_QUALITY:-85}
 DATA_ROOT=${TIMESCREEN_DATA_ROOT:-~/timescreens}
 INTERVAL=${TIMESCREEN_INTERVAL:-300}
 ALERT_INTERVAL=${TIMESCREEN_ALERT_INTERVAL:-12}
-BIN_SOURCE=$(python -c 'import sys,os; print os.path.realpath(sys.argv[1])' $BASH_SOURCE)
-BIN_ROOT=`dirname $BIN_SOURCE`
-APP_ROOT=`dirname $BIN_ROOT`
-SOUNDS_ROOT=$APP_ROOT/var/sounds
-SOUND_BEFORE=$SOUNDS_ROOT/KDE-Im-Sms.ogg
-SOUND_ON=$SOUNDS_ROOT/sonar.ogg
-LOG_ROOT="$(date +$DATA_ROOT/$PROJECT/%Y/%m)"
-LOG_FILE=$LOG_ROOT/timelog.$PROJECT.`date "+%Y.%m.tsv"`
+BIN_SOURCE=$(python -c 'import sys,os; print os.path.realpath(sys.argv[1])' "${BASH_SOURCE}")
+BIN_ROOT=`dirname "${BIN_SOURCE}"`
+APP_ROOT=`dirname "${BIN_ROOT}"`
+SOUNDS_ROOT="${APP_ROOT}/var/sounds"
+SOUND_BEFORE="${SOUNDS_ROOT}/KDE-Im-Sms.ogg"
+SOUND_ON="${SOUNDS_ROOT}/sonar.ogg"
+LOG_ROOT=$(date +"${DATA_ROOT}/${PROJECT}/%Y/%m")
+LOG_FILE="${LOG_ROOT}/timelog.${PROJECT}."$(date "+%Y.%m.tsv")
+LOG_BACKUP_FILE="${LOG_FILE}.bak"
 
-echo "Start at: $START_DATE"
+if [ -f "${LOG_BACKUP_FILE}" ]; then
+    echo "There is exists backup file:"
+    echo "${LOG_BACKUP_FILE}"
+    echo "Probably, another instance of this program is already running for the project \"${PROJECT}\","
+    echo "or last time has been failed. Check the backup with log file:"
+    echo "${LOG_FILE}"
+    echo "and then remove the backup file."
+    exit 0
+fi
+
+echo "Start at: ${START_DATE}"
+cp -a "${LOG_FILE}" "${LOG_BACKUP_FILE}"
+echo -e "${START_DATE}" >> "${LOG_FILE}"
 
 trap ctrl_c INT
+
+
+function replace() { # file_name, from_str, to_str
+    python -c 'import sys,os; reload(sys); sys.setdefaultencoding("UTF-8"); f = open(sys.argv[1].decode("utf-8"), "r+"); s = open(sys.argv[1].decode("utf-8")).read().decode("utf-8").replace(sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8")); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
+}
 
 
 function screen() {
@@ -26,41 +44,55 @@ function screen() {
     cd $dir
     filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
-    convert "$filename" -resize $MAX_WIDTH -quality $QUALITY "$filename"
+    convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
     pkill notify-osd
     notify-send "SAVED!"
-    nohup mplayer "$SOUND_ON" >/dev/null 2>&1 &
+    nohup mplayer "${SOUND_ON}" >/dev/null 2>&1 &
 }
 
 
 function ctrl_c() {
-    echo "Ticket number:"
-    read TICKET_NUMBER
+
+    read -p "Ticket number:" TICKET_NUMBER
     if [ "$TICKET_NUMBER" != "0" -a -n "$TICKET_NUMBER" ]
     then
-        TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" $LOG_FILE`
+        TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" "${LOG_FILE}"`
     else
         TICKET_TITLE=""
     fi
-    if [ -n "$TICKET_TITLE" ]
+    if [ -n "${TICKET_TITLE}" ]
     then
-        echo "Found ticket title: \"$TICKET_TITLE\""
+        echo "Found ticket title: \"${TICKET_TITLE}\""
     else
-        echo "Ticket title:"
-        read TICKET_TITLE
+        read -p "Ticket title:" TICKET_TITLE
     fi
-    echo "Comment:"
-    read COMMENT
-    echo "Commit revision:"
-    read COMMIT
-    mkdir -p $LOG_ROOT
+    read -p "Idle time, for example 01:00:00:" IDLE
+    read -p "Comment:" COMMENT
+    read -p "Commit revision:" COMMIT
+    mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
-    echo -e "$TICKET_NUMBER\t$PROJECT\t$TICKET_TITLE\t$START_DATE\t$END_DATE\t\t\t\t\t\t$COMMIT\t$COMMENT" >> $LOG_FILE
-    echo -e "Start / End date: $START_DATE\t$END_DATE"
+    PLACEHOLDER=$(echo -e "\n${START_DATE}")
+    DATA=$(echo -e "\n${TICKET_NUMBER}\t${PROJECT}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
+    replace "${LOG_FILE}" "${PLACEHOLDER}" "${DATA}"
+    echo -e "Start / End date: ${START_DATE}\t${END_DATE}"
     screen
-    tail -n 3 $LOG_FILE
-    gedit $LOG_FILE
-    exit 1;
+    echo "${LOG_FILE}"
+    tail -n 3 "${LOG_FILE}"
+    gedit "${LOG_FILE}"
+
+    if [ $(($(cat "${LOG_BACKUP_FILE}"|wc -l) + 1)) -ne $(cat "${LOG_FILE}"|wc -l) ]; then
+        echo ""
+        printf '=%.0s' {1..100}
+        echo ""
+        echo "ERROR DETECTED!!!"
+        echo -e "Check ${LOG_FILE}\nwith backup ${LOG_BACKUP_FILE}"
+        printf '=%.0s' {1..100}
+        echo ""
+        exit 1
+    else
+        rm "${LOG_BACKUP_FILE}"
+        exit 0
+    fi
 }
 
 screen
