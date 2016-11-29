@@ -53,7 +53,7 @@ function screen() {
 
 function ctrl_c() {
 
-    read -p "Ticket number:" TICKET_NUMBER
+    read -p "Ticket number: " TICKET_NUMBER
     if [ "$TICKET_NUMBER" != "0" -a -n "$TICKET_NUMBER" ]
     then
         TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" "${LOG_FILE}"`
@@ -64,11 +64,11 @@ function ctrl_c() {
     then
         echo "Found ticket title: \"${TICKET_TITLE}\""
     else
-        read -p "Ticket title:" TICKET_TITLE
+        read -p "Ticket title: " TICKET_TITLE
     fi
-    read -p "Idle time, for example 01:00:00:" IDLE
-    read -p "Comment:" COMMENT
-    read -p "Commit revision:" COMMIT
+    read -p "Idle time, for example 01:00:00: " IDLE
+    read -p "Comment: " COMMENT
+    read -p "Commit revision: " COMMIT
     mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
     PLACEHOLDER=$(echo -e "\n${START_DATE}")
