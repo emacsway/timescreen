@@ -27,6 +27,7 @@ if [ -f "${LOG_BACKUP_FILE}" ]; then
 fi
 
 echo "Start at: ${START_DATE}"
+touch "${LOG_FILE}"
 cp -a "${LOG_FILE}" "${LOG_BACKUP_FILE}"
 echo -e "${START_DATE}" >> "${LOG_FILE}"
 
