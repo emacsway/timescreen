@@ -29,7 +29,8 @@ fi
 echo "Start at: ${START_DATE}"
 touch "${LOG_FILE}"
 cp -a "${LOG_FILE}" "${LOG_BACKUP_FILE}"
-echo -e "${START_DATE}" >> "${LOG_FILE}"
+LINE_PLACEHOLDER=$(echo -e "__${START_DATE}")
+echo -e "${LINE_PLACEHOLDER}" >> "${LOG_FILE}"
 
 trap ctrl_c INT
 
@@ -72,9 +73,8 @@ function ctrl_c() {
     read -p "Commit revision: " COMMIT
     mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
-    PLACEHOLDER=$(echo -e "\n${START_DATE}")
-    DATA=$(echo -e "\n${TICKET_NUMBER}\t${PROJECT}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
-    replace "${LOG_FILE}" "${PLACEHOLDER}" "${DATA}"
+    DATA=$(echo -e "${TICKET_NUMBER}\t${PROJECT}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
+    replace "${LOG_FILE}" "${LINE_PLACEHOLDER}" "${DATA}"
     echo -e "Start / End date: ${START_DATE}\t${END_DATE}"
     screen
     echo "${LOG_FILE}"
