@@ -27,6 +27,7 @@ if [ -f "${LOG_BACKUP_FILE}" ]; then
 fi
 
 echo "Start at: ${START_DATE}"
+mkdir -p `dirname "${LOG_FILE}"`
 touch "${LOG_FILE}"
 cp -a "${LOG_FILE}" "${LOG_BACKUP_FILE}"
 LINE_PLACEHOLDER=$(echo -e "__${START_DATE}")
@@ -42,8 +43,8 @@ function replace() { # file_name, from_str, to_str
 
 function screen() {
     dir="$(date +$DATA_ROOT/$PROJECT/%Y/%m/%d)"
-    mkdir -p $dir
-    cd $dir
+    mkdir -p "${dir}"
+    cd "${dir}"
     filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
     convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
