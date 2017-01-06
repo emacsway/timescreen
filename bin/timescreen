@@ -69,9 +69,9 @@ function ctrl_c() {
     else
         read -p "Ticket title: " TICKET_TITLE
     fi
-    read -p "Idle time, for example 01:00:00: " IDLE
     read -p "Comment: " COMMENT
     read -p "Commit revision: " COMMIT
+    read -p "Idle time, for example 01:00:00: " IDLE
     mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
     DATA=$(echo -e "${TICKET_NUMBER}\t${PROJECT}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
