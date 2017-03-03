@@ -62,7 +62,7 @@ function ctrl_c() {
     read -p "Ticket number: " TICKET_NUMBER
     if [ "$TICKET_NUMBER" != "0" -a -n "$TICKET_NUMBER" ]
     then
-        TICKET_TITLE=`grep -P -o -m 1 "(?<=^$TICKET_NUMBER\t$PROJECT\t)([^\t]+)(?=\t)" "${LOG_FILE}"`
+        TICKET_TITLE=`grep -P -o -m 1 "(?<=^$PROJECT\t$TICKET_NUMBER\t)([^\t]+)(?=\t)" "${LOG_FILE}"`
     else
         TICKET_TITLE=""
     fi
