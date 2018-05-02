@@ -21,6 +21,11 @@ TOMATO_START_TIMESTAMP=$(date +%s)
 TOMATO_DURATION=${TIMESCREEN_TOMATO_DURATION:-1500}
 TOMATO_BREAK_DURATION=${TIMESCREEN_TOMATO_BREAK_DURATION:-300}
 
+# Debugging:
+# INTERVAL=20
+# TOMATO_DURATION=60
+# TOMATO_BREAK_DURATION=40
+
 
 if [ -f "${LOG_BACKUP_FILE}" ]; then
     echo "There is exists backup file:"
@@ -33,7 +38,7 @@ if [ -f "${LOG_BACKUP_FILE}" ]; then
 fi
 
 
-echo "Start at: ${START_DATE}"
+echo "Started at: ${START_DATE}"
 mkdir -p `dirname "${LOG_FILE}"`
 touch "${LOG_FILE}"
 cp -a "${LOG_FILE}" "${LOG_BACKUP_FILE}"
@@ -48,9 +53,9 @@ function repl() { for ((i=1; i<=$2; i++)); do echo -n $1; done }
 
 
 function msg() {
-    echo -e "$1"
+    echo -en "$1"
     pkill notify-osd
-    notify-send "$(echo -e $1)"
+    notify-send "$1"
 }
 
 
@@ -70,15 +75,17 @@ function tomato() {
 
 
 function show_tomato_progress() {
-    local display_length=20
+    local display_length=25
     local duration=${TOMATO_DURATION}
     local start_time=${TOMATO_START_TIMESTAMP}
     local spent_time=$(($(date +%s) - ${start_time}))
     local spent_ratio=$((${spent_time}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
-    local txt="Tomato: "${spent_ratio}"% "$(date -d@${spent_time} -u +%H:%M:%S)" ["$(repl = ${spent_units})$(repl _ ${rest_units})"] since: "$(date -d@${start_time} -u "+%d.%m.%Y %H:%M:%S")
-    msg "${txt}"
+    local txt="Tomato: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
+    echo -en "\033[0;32m${txt}\033[0m"
+    pkill notify-osd
+    notify-send "${txt}"
 }
 
 
@@ -90,8 +97,10 @@ function show_tomato_break() {
     local spent_ratio=$((${spent_time}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
-    local txt="Break: "${spent_ratio}"% "$(date -d@${spent_time} -u +%H:%M:%S)" ["$(repl = ${spent_units})$(repl _ ${rest_units})"] since: "$(date -d@${start_time} -u "+%d.%m.%Y %H:%M:%S")
-    msg "${txt}"
+    local txt="Break: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
+    echo -en "\033[0;31m${txt}\033[0m"
+    pkill notify-osd
+    notify-send "${txt}"
 }
 
 
@@ -113,7 +122,7 @@ function screen() {
 
 
 function ctrl_c() {
-
+    echo ""
     read -p "Ticket number: " TICKET_NUMBER
     if [ "$TICKET_NUMBER" != "0" -a -n "$TICKET_NUMBER" ]
     then
@@ -161,7 +170,7 @@ sleep 20
 TOMATO_START_TIMESTAMP=$(date +%s)
 while true
 do
-    echo `date "+%d.%m.%Y %H:%M:%S"`
+    echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
     screen
     tomato
     sleep $(($INTERVAL - $ALERT_INTERVAL))
