@@ -54,10 +54,19 @@ trap ctrl_c INT
 function repl() { for ((i=1; i<=$2; i++)); do echo -n $1; done }
 
 
-function msg() {
-    echo -en "$1"
+function gui_msg() {  # txt, duration
     pkill notify-osd
     notify-send "$1"
+}
+
+
+function sound() {  # path
+    local extra=""
+    if [ -n $2]
+    then
+        extra="-t $2"
+    fi
+    nohup mplayer "$1" extra >/dev/null 2>&1 &
 }
 
 
@@ -87,8 +96,7 @@ function show_tomato_progress() {
     local rest_units=$((${display_length} - ${spent_units}))
     local txt="Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
     stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${txt}\033[0m"
-    pkill notify-osd
-    notify-send "${txt}"
+    gui_msg "${txt}"
 }
 
 
@@ -102,8 +110,7 @@ function show_tomato_break() {
     local rest_units=$((${display_length} - ${spent_units}))
     local txt="Break: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
     stdbuf -i0 -o0 -e0 echo -en "\033[0;31m${txt}\033[0m"
-    pkill notify-osd
-    notify-send "${txt}"
+    gui_msg "${txt}"
 }
 
 
@@ -118,9 +125,8 @@ function screen() {
     filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
     convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
-    pkill notify-osd
-    notify-send "SAVED!"
-    nohup mplayer "${SOUND_ON}" >/dev/null 2>&1 &
+    gui_msg "SAVED!"
+    sound "${SOUND_ON}"
 }
 
 
@@ -176,12 +182,11 @@ do
     stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
     screen
     tomato
-    sleep $(($INTERVAL - $ALERT_INTERVAL))
-    nohup mplayer "$SOUND_BEFORE" >/dev/null 2>&1 &
-    for i in `seq $ALERT_INTERVAL -1 1`;
+    sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
+    sound "${SOUND_BEFORE}"
+    for i in $(seq ${ALERT_INTERVAL} -1 1);
     do
-        pkill notify-osd
-        notify-send -t 1000 "Screen will be saved in $i sec."
+        gui_msg "Screen will be saved in ${i} sec." 1000
         sleep 1
     done
 done
