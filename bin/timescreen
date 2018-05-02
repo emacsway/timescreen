@@ -17,9 +17,11 @@ LOG_FILE="${LOG_ROOT}/timelog.${PROJECT}."$(date "+%Y.%m.tsv")
 LOG_BACKUP_FILE="${LOG_FILE}.bak"
 IMG_ROOT="$(date +$DATA_ROOT/$PROJECT/%Y/%m/%d)"
 
-TOMATO_START_TIMESTAMP=$(date +%s)
 TOMATO_DURATION=${TIMESCREEN_TOMATO_DURATION:-1500}
 TOMATO_BREAK_DURATION=${TIMESCREEN_TOMATO_BREAK_DURATION:-300}
+
+tomato_start_timestamp=$(date +%s)
+tomato_count=0
 
 # Debugging:
 # INTERVAL=20
@@ -60,7 +62,7 @@ function msg() {
 
 
 function tomato() {
-    local passed=$(($(date +%s) - ${TOMATO_START_TIMESTAMP}))
+    local passed=$(($(date +%s) - ${tomato_start_timestamp}))
     if [ ${passed} -lt ${TOMATO_DURATION} ]
     then
         show_tomato_progress
@@ -68,7 +70,8 @@ function tomato() {
     then
         show_tomato_break
     else
-        TOMATO_START_TIMESTAMP=$(date +%s)
+        tomato_start_timestamp=$(date +%s)
+        tomato_count=$((${tomato_count} + 1))
         show_tomato_progress
     fi
 }
@@ -77,12 +80,12 @@ function tomato() {
 function show_tomato_progress() {
     local display_length=25
     local duration=${TOMATO_DURATION}
-    local start_time=${TOMATO_START_TIMESTAMP}
+    local start_time=${tomato_start_timestamp}
     local spent_time=$(($(date +%s) - ${start_time}))
     local spent_ratio=$((${spent_time}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
-    local txt="Tomato: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
+    local txt="Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
     stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${txt}\033[0m"
     pkill notify-osd
     notify-send "${txt}"
@@ -92,7 +95,7 @@ function show_tomato_progress() {
 function show_tomato_break() {
     local display_length=10
     local duration=${TOMATO_BREAK_DURATION}
-    local start_time=$((${TOMATO_START_TIMESTAMP} + ${TOMATO_DURATION}))
+    local start_time=$((${tomato_start_timestamp} + ${TOMATO_DURATION}))
     local spent_time=$(($(date +%s) - ${start_time}))
     local spent_ratio=$((${spent_time}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
@@ -167,7 +170,7 @@ function ctrl_c() {
 
 screen
 sleep 20
-TOMATO_START_TIMESTAMP=$(date +%s)
+tomato_start_timestamp=$(date +%s)
 while true
 do
     stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
