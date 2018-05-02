@@ -83,7 +83,7 @@ function show_tomato_progress() {
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
     local txt="Tomato: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
-    echo -en "\033[0;32m${txt}\033[0m"
+    stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${txt}\033[0m"
     pkill notify-osd
     notify-send "${txt}"
 }
@@ -98,7 +98,7 @@ function show_tomato_break() {
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
     local txt="Break: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
-    echo -en "\033[0;31m${txt}\033[0m"
+    stdbuf -i0 -o0 -e0 echo -en "\033[0;31m${txt}\033[0m"
     pkill notify-osd
     notify-send "${txt}"
 }
@@ -170,7 +170,7 @@ sleep 20
 TOMATO_START_TIMESTAMP=$(date +%s)
 while true
 do
-    echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
+    stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
     screen
     tomato
     sleep $(($INTERVAL - $ALERT_INTERVAL))
