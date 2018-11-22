@@ -190,6 +190,7 @@ do
     sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
     sound "${SOUND_BEFORE}"
     gui_msg "Screen will be saved in ${ALERT_INTERVAL} sec." 1000
+    sleep ${ALERT_INTERVAL}
     # for i in $(seq ${ALERT_INTERVAL} -1 1);
     # do
     #     gui_msg "Screen will be saved in ${i} sec." 1000
