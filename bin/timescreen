@@ -55,18 +55,20 @@ function repl() { for ((i=1; i<=$2; i++)); do echo -n $1; done }
 
 
 function gui_msg() {  # txt, duration
+    local timeout=3000
+    if [[ -n $2 ]]
+    then
+        timeout=$2
+    fi
     pkill notify-osd
-    notify-send "$1"
+    # notify-send "$1" -t $timeout
+    # timeout $(($timeout/1000)) zenity --info text="$1"
+    nohup timeout $(($timeout/1000)) xmessage -center "$1" >/dev/null 2>&1 &
 }
 
 
 function sound() {  # path
-    local extra=""
-    if [ -n $2]
-    then
-        extra="-t $2"
-    fi
-    nohup mplayer "$1" extra >/dev/null 2>&1 &
+    nohup mplayer "$1" >/dev/null 2>&1 &
 }
 
 
@@ -125,8 +127,6 @@ function screen() {
     filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
     convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
-    gui_msg "SAVED!"
-    sound "${SOUND_ON}"
 }
 
 
@@ -154,6 +154,8 @@ function ctrl_c() {
     replace "${LOG_FILE}" "${LINE_PLACEHOLDER}" "${DATA}"
     echo -e "Start / End date: ${START_DATE}\t${END_DATE}"
     screen
+    gui_msg "SAVED!" 1000
+    sound "${SOUND_ON}"
     echo "${LOG_FILE}"
     tail -n 3 "${LOG_FILE}"
 
@@ -175,6 +177,8 @@ function ctrl_c() {
 
 
 screen
+gui_msg "SAVED!" 1000
+sound "${SOUND_ON}"
 sleep 20
 tomato_start_timestamp=$(date +%s)
 while true
@@ -182,11 +186,13 @@ do
     stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
     screen
     tomato
+    sound "${SOUND_ON}"
     sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
     sound "${SOUND_BEFORE}"
-    for i in $(seq ${ALERT_INTERVAL} -1 1);
-    do
-        gui_msg "Screen will be saved in ${i} sec." 1000
-        sleep 1
-    done
+    gui_msg "Screen will be saved in ${ALERT_INTERVAL} sec." 1000
+    # for i in $(seq ${ALERT_INTERVAL} -1 1);
+    # do
+    #     gui_msg "Screen will be saved in ${i} sec." 1000
+    #     sleep 1
+    # done
 done
