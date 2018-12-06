@@ -20,6 +20,9 @@ IMG_ROOT="$(date +$DATA_ROOT/$PROJECT/%Y/%m/%d)"
 TOMATO_DURATION=${TIMESCREEN_TOMATO_DURATION:-1500}
 TOMATO_BREAK_DURATION=${TIMESCREEN_TOMATO_BREAK_DURATION:-300}
 
+pause_start_timestamp=0
+pause_amount=0
+
 tomato_start_timestamp=$(date +%s)
 tomato_count=0
 
@@ -40,6 +43,7 @@ if [ -f "${LOG_BACKUP_FILE}" ]; then
 fi
 
 
+echo "Process ID: $$"
 echo "Started at: ${START_DATE}"
 mkdir -p `dirname "${LOG_FILE}"`
 touch "${LOG_FILE}"
@@ -49,6 +53,8 @@ echo -e "${LINE_PLACEHOLDER}" >> "${LOG_FILE}"
 
 
 trap ctrl_c INT
+# trap pause SIGTSTP
+# trap resume SIGCONT
 
 
 function repl() { for ((i=1; i<=$2; i++)); do echo -n $1; done }
@@ -130,12 +136,37 @@ function screen() {
 }
 
 
+function pause() {
+    pause_start_timestamp=$(date +%s)
+    echo "paused at: " $(date -d@${pause_start_timestamp} "+%d.%m.%Y %H:%M:%S")
+}
+
+
+function resume() {
+    pause_duration=$(($(date +%s) - ${pause_start_timestamp}))
+    echo "resumed at: " $(date "+%d.%m.%Y %H:%M:%S") ", pause duration: " $(convertsecs ${pause_duration})
+    pause_amount=$((${pause_amount} + ${pause_duration}))
+    tomato_start_timestamp=$((${tomato_start_timestamp} + ${pause_duration}))
+    pause_start_timestamp=0
+}
+
+
 function ctrl_c() {
     echo ""
-    read -p "Ticket number: " TICKET_NUMBER
-    if [ "$TICKET_NUMBER" != "0" -a -n "$TICKET_NUMBER" ]
+    read -p "Do you want pause? [Y/n]:" DO_PAUSE
+    if [[ "${DO_PAUSE}" == "Y" ]]
     then
-        TICKET_TITLE=`grep -P -o -m 1 "(?<=^$PROJECT\t$TICKET_NUMBER\t)([^\t]+)(?=\t)" "${LOG_FILE}"`
+        pause
+        echo "Press any key to continue"
+        read -rsn1
+        resume
+        return
+    fi
+
+    read -p "Ticket number: " TICKET_NUMBER
+    if [ "${TICKET_NUMBER}" != "0" -a -n "${TICKET_NUMBER}" ]
+    then
+        TICKET_TITLE=`grep -P -o -m 1 "(?<=^${PROJECT}\t${TICKET_NUMBER}\t)([^\t]+)(?=\t)" "${LOG_FILE}"`
     else
         TICKET_TITLE=""
     fi
@@ -147,7 +178,11 @@ function ctrl_c() {
     fi
     read -p "Comment: " COMMENT
     read -p "Commit revision: " COMMIT
-    read -p "Idle time, for example 01:00:00: " IDLE
+
+    DEFAULT_IDLE=$(convertsecs ${pause_amount})
+    read -e -p "Idle time, for example 01:00:00: " -i "${DEFAULT_IDLE}" IDLE
+    echo "Idle time: \"${IDLE}\""
+
     mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
     DATA=$(echo -e "${PROJECT}\t${TICKET_NUMBER}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
@@ -176,24 +211,36 @@ function ctrl_c() {
 }
 
 
+convertsecs() {
+    h=$(bc <<< "${1}/3600")
+    m=$(bc <<< "(${1}%3600)/60")
+    s=$(bc <<< "${1}%60")
+    printf "%02d:%02d:%02d\n" $h $m $s
+}
+
+
+main_loop() {
+    tomato_start_timestamp=$(date +%s)
+    while true
+    do
+        stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
+        screen
+        tomato
+        sound "${SOUND_ON}"
+        sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
+        sound "${SOUND_BEFORE}"
+        gui_msg "Screen will be saved in ${ALERT_INTERVAL} sec." 1000
+        sleep ${ALERT_INTERVAL}
+        # for i in $(seq ${ALERT_INTERVAL} -1 1);
+        # do
+        #     gui_msg "Screen will be saved in ${i} sec." 1000
+        #     sleep 1
+        # done
+    done
+}
+
 screen
 gui_msg "SAVED!" 1000
 sound "${SOUND_ON}"
-sleep 20
-tomato_start_timestamp=$(date +%s)
-while true
-do
-    stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
-    screen
-    tomato
-    sound "${SOUND_ON}"
-    sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
-    sound "${SOUND_BEFORE}"
-    gui_msg "Screen will be saved in ${ALERT_INTERVAL} sec." 1000
-    sleep ${ALERT_INTERVAL}
-    # for i in $(seq ${ALERT_INTERVAL} -1 1);
-    # do
-    #     gui_msg "Screen will be saved in ${i} sec." 1000
-    #     sleep 1
-    # done
-done
+sleep 15
+main_loop
