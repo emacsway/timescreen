@@ -6,7 +6,7 @@ QUALITY=${TIMESCREEN_QUALITY:-85}
 DATA_ROOT=${TIMESCREEN_DATA_ROOT:-~/timescreens}
 INTERVAL=${TIMESCREEN_INTERVAL:-300}
 ALERT_INTERVAL=${TIMESCREEN_ALERT_INTERVAL:-12}
-BIN_SOURCE=$(python -c 'import sys,os; print os.path.realpath(sys.argv[1])' "${BASH_SOURCE}")
+BIN_SOURCE=$(python -c 'import sys,os; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE}")
 BIN_ROOT=`dirname "${BIN_SOURCE}"`
 APP_ROOT=`dirname "${BIN_ROOT}"`
 SOUNDS_ROOT="${APP_ROOT}/var/sounds"
@@ -48,8 +48,8 @@ echo "Started at: ${START_DATE}"
 mkdir -p `dirname "${LOG_FILE}"`
 touch "${LOG_FILE}"
 cp -a "${LOG_FILE}" "${LOG_BACKUP_FILE}"
-LINE_PLACEHOLDER=$(echo -e "__${START_DATE}")
-echo -e "${LINE_PLACEHOLDER}" >> "${LOG_FILE}"
+LINE_PLACEHOLDER=$(echo -en "__${START_DATE}")
+echo -en "${LINE_PLACEHOLDER}" >> "${LOG_FILE}"
 
 
 trap ctrl_c INT
@@ -122,6 +122,16 @@ function show_tomato_break() {
 }
 
 
+function re_escape() {
+    python -c 'import sys, os, re; reload(sys); sys.setdefaultencoding("UTF-8"); print(re.escape(sys.argv[1].decode("utf-8")));' "$1";
+}
+
+
+function re_replace() { # file_name, from_str, to_str
+    python -c 'import sys, os, re; reload(sys); sys.setdefaultencoding("UTF-8"); f = open(sys.argv[1].decode("utf-8"), "r+"); s = re.sub(sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8"), open(sys.argv[1].decode("utf-8")).read().decode("utf-8"), flags=re.M|re.U); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
+}
+
+
 function replace() { # file_name, from_str, to_str
     python -c 'import sys,os; reload(sys); sys.setdefaultencoding("UTF-8"); f = open(sys.argv[1].decode("utf-8"), "r+"); s = open(sys.argv[1].decode("utf-8")).read().decode("utf-8").replace(sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8")); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
 }
@@ -130,7 +140,7 @@ function replace() { # file_name, from_str, to_str
 function screen() {
     mkdir -p "${IMG_ROOT}"
     cd "${IMG_ROOT}"
-    filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
+    local filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
     DISPLAY=:0 scrot "$filename"
     convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
 }
@@ -138,15 +148,21 @@ function screen() {
 
 function pause() {
     pause_start_timestamp=$(date +%s)
-    echo "paused at: " $(date -d@${pause_start_timestamp} "+%d.%m.%Y %H:%M:%S")
+    local pause_start_date=$(date -d@${pause_start_timestamp} "+%d.%m.%Y %H:%M:%S")
+    echo -en "\t${pause_start_date}" >> "${LOG_FILE}"
+    echo "paused at: ${pause_start_date}"
 }
 
 
 function resume() {
-    pause_duration=$(($(date +%s) - ${pause_start_timestamp}))
-    echo "resumed at: " $(date "+%d.%m.%Y %H:%M:%S") ", pause duration: " $(convertsecs ${pause_duration})
-    pause_amount=$((${pause_amount} + ${pause_duration}))
-    tomato_start_timestamp=$((${tomato_start_timestamp} + ${pause_duration}))
+    local resume_timestamp=$(date +%s)
+    local resume_date=$(date -d@${resume_timestamp} "+%d.%m.%Y %H:%M:%S")
+    local pause_duration_seconds=$((${resume_timestamp} - ${pause_start_timestamp}))
+    local pause_duration_time=$(convertsecs ${pause_duration_seconds})
+    echo -en " - ${resume_date} = ${pause_duration_time}" >> "${LOG_FILE}"
+    echo "resumed at: ${resume_date}, pause duration: ${pause_duration_time}"
+    pause_amount=$((${pause_amount} + ${pause_duration_seconds}))
+    tomato_start_timestamp=$((${tomato_start_timestamp} + ${pause_duration_seconds}))
     pause_start_timestamp=0
 }
 
@@ -186,7 +202,9 @@ function ctrl_c() {
     mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
     DATA=$(echo -e "${PROJECT}\t${TICKET_NUMBER}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
-    replace "${LOG_FILE}" "${LINE_PLACEHOLDER}" "${DATA}"
+    ESPAPEN_LINE_PLACEHOLDER=$(re_escape "${LINE_PLACEHOLDER}")
+    re_replace "${LOG_FILE}" "${ESPAPEN_LINE_PLACEHOLDER}[^\n]*" "${DATA}"
+    echo "" >> "${LOG_FILE}"  # New line
     echo -e "Start / End date: ${START_DATE}\t${END_DATE}"
     screen
     gui_msg "SAVED!" 1000
