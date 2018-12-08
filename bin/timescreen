@@ -16,6 +16,7 @@ LOG_ROOT=$(date +"${DATA_ROOT}/${PROJECT}/%Y/%m")
 LOG_FILE="${LOG_ROOT}/timelog.${PROJECT}."$(date "+%Y.%m.tsv")
 LOG_BACKUP_FILE="${LOG_FILE}.bak"
 IMG_ROOT="$(date +$DATA_ROOT/$PROJECT/%Y/%m/%d)"
+DEFAULT_COMMENT=""
 
 TOMATO_DURATION=${TIMESCREEN_TOMATO_DURATION:-1500}
 TOMATO_BREAK_DURATION=${TIMESCREEN_TOMATO_BREAK_DURATION:-300}
@@ -150,6 +151,11 @@ function pause() {
     pause_start_timestamp=$(date +%s)
     local pause_start_date=$(date -d@${pause_start_timestamp} "+%d.%m.%Y %H:%M:%S")
     echo -en "\t${pause_start_date}" >> "${LOG_FILE}"
+    if [ -n "${DEFAULT_COMMENT}" ]
+    then
+        DEFAULT_COMMENT="${DEFAULT_COMMENT}, "
+    fi
+    DEFAULT_COMMENT="${DEFAULT_COMMENT}Pause: ${pause_start_date}"
     echo "paused at: ${pause_start_date}"
 }
 
@@ -159,7 +165,8 @@ function resume() {
     local resume_date=$(date -d@${resume_timestamp} "+%d.%m.%Y %H:%M:%S")
     local pause_duration_seconds=$((${resume_timestamp} - ${pause_start_timestamp}))
     local pause_duration_time=$(convertsecs ${pause_duration_seconds})
-    echo -en " - ${resume_date} = ${pause_duration_time}" >> "${LOG_FILE}"
+    echo -en " - ${resume_date} = -${pause_duration_time}" >> "${LOG_FILE}"
+    DEFAULT_COMMENT="${DEFAULT_COMMENT} - ${resume_date} = -${pause_duration_time}"
     echo "resumed at: ${resume_date}, pause duration: ${pause_duration_time}"
     pause_amount=$((${pause_amount} + ${pause_duration_seconds}))
     tomato_start_timestamp=$((${tomato_start_timestamp} + ${pause_duration_seconds}))
@@ -192,7 +199,7 @@ function ctrl_c() {
     else
         read -p "Ticket title: " TICKET_TITLE
     fi
-    read -p "Comment: " COMMENT
+    read -e -p "Comment: " -i "${DEFAULT_COMMENT}" COMMENT
     read -p "Commit revision: " COMMIT
 
     DEFAULT_IDLE=$(convertsecs ${pause_amount})
