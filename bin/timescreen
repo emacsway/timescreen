@@ -80,46 +80,46 @@ function sound() {  # path
 
 
 function tomato() {
-    local passed=$(($(date +%s) - ${tomato_start_timestamp}))
+    local current_timestamp=$(date +%s)
+    local passed=$((${current_timestamp} - ${tomato_start_timestamp}))
     if [ ${passed} -lt ${TOMATO_DURATION} ]
     then
-        show_tomato_progress
+        tomato_progress_msg "${tomato_start_timestamp}"  "${current_timestamp}" "${TOMATO_DURATION}" "${tomato_count}"
     elif [ ${passed} -lt $((${TOMATO_DURATION} + ${TOMATO_BREAK_DURATION})) ]
     then
-        show_tomato_break
+        tomato_break_msg $((${tomato_start_timestamp} + ${TOMATO_DURATION})) "${current_timestamp}" "${TOMATO_BREAK_DURATION}"
     else
-        tomato_start_timestamp=$(date +%s)
+        tomato_start_timestamp=${current_timestamp}
         tomato_count=$((${tomato_count} + 1))
-        show_tomato_progress
+        tomato_progress_msg "${tomato_start_timestamp}" "${current_timestamp}" "${TOMATO_DURATION}" "${tomato_count}"
     fi
 }
 
 
-function show_tomato_progress() {
-    local display_length=25
-    local duration=${TOMATO_DURATION}
-    local start_time=${tomato_start_timestamp}
-    local spent_time=$(($(date +%s) - ${start_time}))
-    local spent_ratio=$((${spent_time}*100/${duration}))
+function tomato_progress_msg() {  # tomato_start_timestamp, current_timestamp, duration, tomato_count
+    local display_length=20
+    local start_time="$1"
+    local current_timestamp="$2"
+    local duration="$3"
+    local tomato_count="$4"
+    local spent_seconds=$((${current_timestamp} - ${start_time}))
+    local spent_ratio=$((${spent_seconds}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
-    local txt="Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
-    stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${txt}\033[0m"
-    gui_msg "${txt}"
+    echo -n "Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_seconds} -u "+%H:%M:%S")
 }
 
 
-function show_tomato_break() {
+function tomato_break_msg() {  # break_start_timestamp, current_timestamp,  break_duration
     local display_length=10
-    local duration=${TOMATO_BREAK_DURATION}
-    local start_time=$((${tomato_start_timestamp} + ${TOMATO_DURATION}))
-    local spent_time=$(($(date +%s) - ${start_time}))
-    local spent_ratio=$((${spent_time}*100/${duration}))
+    local break_start_timestamp="$1"
+    local current_timestamp="$2"
+    local duration="$3"
+    local spent_seconds=$((${current_timestamp} - ${break_start_timestamp}))
+    local spent_ratio=$((${spent_seconds}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
-    local txt="Break: "${spent_ratio}"% "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_time} -u "+%H:%M:%S")
-    stdbuf -i0 -o0 -e0 echo -en "\033[0;31m${txt}\033[0m"
-    gui_msg "${txt}"
+    echo -n "Break: "${spent_ratio}"% "$(date -d@${break_start_timestamp} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_seconds} -u "+%H:%M:%S")
 }
 
 
@@ -249,8 +249,19 @@ main_loop() {
     while true
     do
         stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
+
         screen
-        tomato
+
+        local tomato_msg=$(tomato)
+        if [[ ${tomato_msg:0:7} == "Tomato:" ]]
+        then
+            stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${tomato_msg}\033[0m"
+            gui_msg "${tomato_msg}"
+        else
+            stdbuf -i0 -o0 -e0 echo -en "\033[0;31m${tomato_msg}\033[0m"
+            gui_msg "${tomato_msg}"
+        fi
+
         sound "${SOUND_ON}"
         sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
         sound "${SOUND_BEFORE}"
