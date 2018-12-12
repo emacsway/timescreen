@@ -98,15 +98,15 @@ function tomato() {
 
 function tomato_progress_msg() {  # tomato_start_timestamp, current_timestamp, duration, tomato_count
     local display_length=20
-    local start_time="$1"
+    local start_timestamp="$1"
     local current_timestamp="$2"
     local duration="$3"
     local tomato_count="$4"
-    local spent_seconds=$((${current_timestamp} - ${start_time}))
+    local spent_seconds=$((${current_timestamp} - ${start_timestamp}))
     local spent_ratio=$((${spent_seconds}*100/${duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
-    echo -n "Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_time} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_seconds} -u "+%H:%M:%S")
+    echo -n "Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_timestamp} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_seconds} -u "+%H:%M:%S")
 }
 
 
