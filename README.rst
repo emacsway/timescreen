@@ -2,7 +2,7 @@
 Timescreen - Take periodic screenshots
 =======================================
 
-Timescreen - Take periodic screenshots.
+Timescreen - Take periodic screenshots. Log your work. Use Pomodoro Technique.
 
 Installation
 =============
