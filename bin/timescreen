@@ -193,8 +193,8 @@ function ctrl_c() {
     mkdir -p "${LOG_ROOT}"
     END_DATE=`date "+%d.%m.%Y %H:%M:%S"`
     DATA=$(echo -e "${PROJECT}\t${TICKET_NUMBER}\t${TICKET_TITLE}\t${START_DATE}\t${END_DATE}\t${IDLE}\t\t\t\t\t${COMMIT}\t${COMMENT}")
-    ESPAPEN_LINE_PLACEHOLDER=$(re_escape "${LINE_PLACEHOLDER}")
-    re_replace "${LOG_FILE}" "${ESPAPEN_LINE_PLACEHOLDER}[^\n]*" "${DATA}"
+    ESPAPED_LINE_PLACEHOLDER=$(re_escape "${LINE_PLACEHOLDER}")
+    re_replace "${LOG_FILE}" "${ESPAPED_LINE_PLACEHOLDER}[^\n]*" "${DATA}"
     echo "" >> "${LOG_FILE}"  # New line
     echo -e "Start / End date: ${START_DATE}\t${END_DATE}"
     screen
