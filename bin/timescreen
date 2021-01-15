@@ -75,35 +75,18 @@ function gui_msg() {  # txt, duration
 
 
 function sound() {  # path
-    nohup mplayer "$1" >/dev/null 2>&1 &
+    nohup mplayer -volume 60 "$1" >/dev/null 2>&1 &
 }
 
 
-function tomato() {
-    local current_timestamp=$(date +%s)
-    local passed=$((${current_timestamp} - ${tomato_start_timestamp}))
-    if [ ${passed} -lt ${TOMATO_DURATION} ]
-    then
-        tomato_progress_msg "${tomato_start_timestamp}"  "${current_timestamp}" "${TOMATO_DURATION}" "${tomato_count}"
-    elif [ ${passed} -lt $((${TOMATO_DURATION} + ${TOMATO_BREAK_DURATION})) ]
-    then
-        tomato_break_msg $((${tomato_start_timestamp} + ${TOMATO_DURATION})) "${current_timestamp}" "${TOMATO_BREAK_DURATION}"
-    else
-        tomato_start_timestamp=${current_timestamp}
-        tomato_count=$((${tomato_count} + 1))
-        tomato_progress_msg "${tomato_start_timestamp}" "${current_timestamp}" "${TOMATO_DURATION}" "${tomato_count}"
-    fi
-}
-
-
-function tomato_progress_msg() {  # tomato_start_timestamp, current_timestamp, duration, tomato_count
+function tomato_progress_msg() {  # tomato_start_timestamp, current_timestamp, tomato_duration, tomato_count
     local display_length=20
     local start_timestamp="$1"
     local current_timestamp="$2"
-    local duration="$3"
+    local tomato_duration="$3"
     local tomato_count="$4"
     local spent_seconds=$((${current_timestamp} - ${start_timestamp}))
-    local spent_ratio=$((${spent_seconds}*100/${duration}))
+    local spent_ratio=$((${spent_seconds}*100/${tomato_duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
     echo -n "Tomato: "${spent_ratio}"% of "$((${tomato_count} + 1))" "$(date -d@${start_timestamp} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_seconds} -u "+%H:%M:%S")
@@ -114,9 +97,9 @@ function tomato_break_msg() {  # break_start_timestamp, current_timestamp,  brea
     local display_length=10
     local break_start_timestamp="$1"
     local current_timestamp="$2"
-    local duration="$3"
+    local break_duration="$3"
     local spent_seconds=$((${current_timestamp} - ${break_start_timestamp}))
-    local spent_ratio=$((${spent_seconds}*100/${duration}))
+    local spent_ratio=$((${spent_seconds}*100/${break_duration}))
     local spent_units=$((${spent_ratio}*${display_length}/100))
     local rest_units=$((${display_length} - ${spent_units}))
     echo -n "Break: "${spent_ratio}"% "$(date -d@${break_start_timestamp} "+%H:%M:%S")" ["$(repl = ${spent_units})">"$(repl - ${rest_units})"] "$(date -d@${spent_seconds} -u "+%H:%M:%S")
@@ -142,7 +125,8 @@ function screen() {
     mkdir -p "${IMG_ROOT}"
     cd "${IMG_ROOT}"
     local filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
-    DISPLAY=:0 scrot "$filename"
+    # DISPLAY=:0 scrot "$filename"
+    scrot "$filename"
     convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
 }
 
@@ -246,28 +230,50 @@ convertsecs() {
 
 main_loop() {
     tomato_start_timestamp=$(date +%s)
+    local tomato_duration="${TOMATO_DURATION}"
+    local break_duration="${TOMATO_BREAK_DURATION}"
+    local interval="${INTERVAL}"
+    local alert_interval="${ALERT_INTERVAL}"
+    local current_timestamp=0;
+    local passed=0
     while true
     do
         stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
 
         screen
 
-        local tomato_msg=$(tomato)
-        if [[ ${tomato_msg:0:7} == "Tomato:" ]]
+        current_timestamp=$(date +%s)
+        passed=$((${current_timestamp} - ${tomato_start_timestamp}))
+        if [ ${passed} -ge $((${tomato_duration} + ${break_duration})) ]
         then
+            tomato_start_timestamp=${current_timestamp}
+            tomato_count=$((${tomato_count} + 1))
+            passed=0
+        fi
+
+        if [ ${passed} -lt ${tomato_duration} ]
+        then
+            tomato_msg=$(tomato_progress_msg "${tomato_start_timestamp}"  "${current_timestamp}" "${tomato_duration}" "${tomato_count}")
             stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${tomato_msg}\033[0m"
             gui_msg "${tomato_msg}"
-        else
+            if [ $((${tomato_duration} - ${passed})) -lt ${interval} ]
+            then
+                interval="$((${tomato_duration} - ${passed}))"
+            fi
+        elif [ ${passed} -lt $((${tomato_duration} + ${break_duration})) ]
+        then
+            tomato_msg=$(tomato_break_msg $((${tomato_start_timestamp} + ${tomato_duration})) "${current_timestamp}" "${break_duration}")
             stdbuf -i0 -o0 -e0 echo -en "\033[0;31m${tomato_msg}\033[0m"
             gui_msg "${tomato_msg}"
+            interval="${break_duration}"
         fi
 
         sound "${SOUND_ON}"
-        sleep $((${INTERVAL} - ${ALERT_INTERVAL}))
+        sleep $((${interval} - ${alert_interval}))
         sound "${SOUND_BEFORE}"
-        gui_msg "Screen will be saved in ${ALERT_INTERVAL} sec." 1000
-        sleep ${ALERT_INTERVAL}
-        # for i in $(seq ${ALERT_INTERVAL} -1 1);
+        gui_msg "Screen will be saved in ${alert_interval} sec." 1000
+        sleep ${alert_interval}
+        # for i in $(seq ${alert_interval} -1 1);
         # do
         #     gui_msg "Screen will be saved in ${i} sec." 1000
         #     sleep 1
