@@ -232,17 +232,19 @@ main_loop() {
     tomato_start_timestamp=$(date +%s)
     local tomato_duration="${TOMATO_DURATION}"
     local break_duration="${TOMATO_BREAK_DURATION}"
+    local tomato_msg_prefix=""
     local interval="${INTERVAL}"
     local alert_interval="${ALERT_INTERVAL}"
     local current_timestamp=0;
     local passed=0
     while true
     do
-        stdbuf -i0 -o0 -e0 echo -en "\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
 
         screen
 
         current_timestamp=$(date +%s)
+        interval="${INTERVAL}"
+        tomato_msg_prefix="\r\033[K"$(date "+%d.%m.%Y %H:%M:%S")" "
         passed=$((${current_timestamp} - ${tomato_start_timestamp}))
         if [ ${passed} -ge $((${tomato_duration} + ${break_duration})) ]
         then
@@ -254,7 +256,7 @@ main_loop() {
         if [ ${passed} -lt ${tomato_duration} ]
         then
             tomato_msg=$(tomato_progress_msg "${tomato_start_timestamp}"  "${current_timestamp}" "${tomato_duration}" "${tomato_count}")
-            stdbuf -i0 -o0 -e0 echo -en "\033[0;32m${tomato_msg}\033[0m"
+            stdbuf -i0 -o0 -e0 echo -en "${tomato_msg_prefix}\033[0;32m${tomato_msg}\033[0m"
             gui_msg "${tomato_msg}"
             if [ $((${tomato_duration} - ${passed})) -lt ${interval} ]
             then
@@ -263,7 +265,7 @@ main_loop() {
         elif [ ${passed} -lt $((${tomato_duration} + ${break_duration})) ]
         then
             tomato_msg=$(tomato_break_msg $((${tomato_start_timestamp} + ${tomato_duration})) "${current_timestamp}" "${break_duration}")
-            stdbuf -i0 -o0 -e0 echo -en "\033[0;31m${tomato_msg}\033[0m"
+            stdbuf -i0 -o0 -e0 echo -en "${tomato_msg_prefix}\033[0;31m${tomato_msg}\033[0m"
             gui_msg "${tomato_msg}"
             interval="${break_duration}"
         fi
