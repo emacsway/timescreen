@@ -68,7 +68,7 @@ function gui_msg() {  # txt, duration
         timeout=$2
     fi
     # pkill notify-osd
-    notify-send "Timescreen" "$1" -t $timeout
+    notify-send --hint int:transient:1 "Timescreen" "$1" -t $timeout
     # timeout $(($timeout/1000)) zenity --info text="$1"
     # nohup timeout $(($timeout/1000)) xmessage -center "$1" >/dev/null 2>&1 &
 }
