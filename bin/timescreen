@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 START_DATE=`date "+%d.%m.%Y %H:%M:%S"`
 PROJECT=${1:-'default'}
 MAX_WIDTH=${TIMESCREEN_MAX_WIDTH:-800}
@@ -6,7 +6,7 @@ QUALITY=${TIMESCREEN_QUALITY:-85}
 DATA_ROOT=${TIMESCREEN_DATA_ROOT:-~/timescreens}
 INTERVAL=${TIMESCREEN_INTERVAL:-300}
 ALERT_INTERVAL=${TIMESCREEN_ALERT_INTERVAL:-12}
-BIN_SOURCE=$(python -c 'import sys,os; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE}")
+BIN_SOURCE=$(python3 -c 'import sys,os; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE}")
 BIN_ROOT=`dirname "${BIN_SOURCE}"`
 APP_ROOT=`dirname "${BIN_ROOT}"`
 SOUNDS_ROOT="${APP_ROOT}/var/sounds"
@@ -107,17 +107,17 @@ function tomato_break_msg() {  # break_start_timestamp, current_timestamp,  brea
 
 
 function re_escape() {
-    python -c 'import sys, os, re; reload(sys); sys.setdefaultencoding("UTF-8"); print(re.escape(sys.argv[1].decode("utf-8")));' "$1";
+    python3 -c 'import sys, re; print(re.escape(sys.argv[1]));' "$1";
 }
 
 
 function re_replace() { # file_name, from_str, to_str
-    python -c 'import sys, os, re; reload(sys); sys.setdefaultencoding("UTF-8"); f = open(sys.argv[1].decode("utf-8"), "r+"); s = re.sub(sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8"), open(sys.argv[1].decode("utf-8")).read().decode("utf-8"), flags=re.M|re.U); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
+    python3 -c 'import sys, re; f = open(sys.argv[1], "r+"); s = re.sub(sys.argv[2], sys.argv[3], open(sys.argv[1]).read(), flags=re.M|re.U); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
 }
 
 
 function replace() { # file_name, from_str, to_str
-    python -c 'import sys,os; reload(sys); sys.setdefaultencoding("UTF-8"); f = open(sys.argv[1].decode("utf-8"), "r+"); s = open(sys.argv[1].decode("utf-8")).read().decode("utf-8").replace(sys.argv[2].decode("utf-8"), sys.argv[3].decode("utf-8")); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
+    python3 -c 'import sys; f = open(sys.argv[1], "r+"); s = open(sys.argv[1]).read().replace(sys.argv[2], sys.argv[3]); f.truncate(); f.write(s); f.close();' "$1" "$2" "$3";
 }
 
 
