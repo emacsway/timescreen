@@ -125,9 +125,15 @@ function screen() {
     mkdir -p "${IMG_ROOT}"
     cd "${IMG_ROOT}"
     local filename=`date "+%d.%m.%Y %H:%M:%S.jpg"`
-    # DISPLAY=:0 scrot "$filename"
-    scrot "$filename"
-    convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
+    if [[ "${XDG_SESSION_TYPE}" == "wayland" ]]
+    then
+        # gnome-screenshot -a -c --file="$filename"
+        gnome-screenshot -c --file="$filename"
+    else
+        # DISPLAY=:0 scrot "$filename"
+        scrot "$filename"
+    fi
+    # convert "$filename" -resize ${MAX_WIDTH} -quality ${QUALITY} "${filename}"
 }
 
 

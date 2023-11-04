@@ -9,7 +9,7 @@ Installation
 
 1. Install dependices::
 
-    sudo apt-get install scrot imagemagick mplayer
+    sudo apt-get install scrot gnome-screenshot imagemagick mplayer
 
 2. Add timescreen/bin to your $PATH or add link like::
 
